@@ -55,6 +55,11 @@ public interface IGenericDAO<T extends KuduBaseDomain> {
      */
     public void delete(T obj);
 
+    /**
+     * 批量删除
+     *
+     * @param objs
+     */
     public void delete(List<T> objs);
 
     /**
