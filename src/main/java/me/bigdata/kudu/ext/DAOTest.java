@@ -27,10 +27,13 @@ public class DAOTest {
         for (int i = 0; i < 10; i++) {
             Random random = new Random();
             TestDemo testDomain = new TestDemo();
+            testDomain.setTableName("testhaha");
             testDomain.setId(String.valueOf(random.nextInt(1000) + 1));
             testDomain.setAge(random.nextInt(88) + 1);
             testDomain.setUserName("roger.xie" + i);
             testDomain.setSex(random.nextInt(2));
+            testDomain.setEmail("email000" + i + "@qq.com" );
+            testDomain.setQq("100000" + i);
             //testDemoDAO.insert(testDomain);
             list.add(testDomain);
         }

@@ -7,6 +7,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kudu.ColumnSchema;
 import org.apache.kudu.Schema;
+import org.apache.kudu.Type;
 import org.apache.kudu.client.*;
 import org.apache.kudu.shaded.com.google.common.collect.Lists;
 import org.apache.kudu.shaded.com.google.common.collect.Maps;
@@ -70,8 +71,45 @@ public abstract class GenericKuduDAO<T> {
             }
         } catch (KuduException e) {
             log.error("Kudu client create table \"" + finalTableName + "\" fail. ");
+            throw new CustomerException(ExceptionEnum.OPERATION_ERROR, e);
         }
         return null;
+    }
+
+    public KuduTable alter(KuduMTable dbObject) {
+        String tableName = StringUtils.isNotBlank(dbObject.getTableName()) ? dbObject.getTableName() : getTableName();
+        String finalTableName = KuduAgentUtils.getFinalTableName(dbObject.getCatalog(), dbObject.getSchema(), tableName);
+
+        List<KuduColumn> kuduColumns = dbObject.getRows();
+        List<String> newColumns = Lists.newArrayList();
+        Map<String, Type> newColumnMap = Maps.newHashMap();
+        for(KuduColumn kuduColumn : kuduColumns) {
+            if (!kuduColumn.isNonPersistent()) {
+                newColumns.add(kuduColumn.getColumnName());
+                newColumnMap.put(kuduColumn.getColumnName(), kuduColumn.getColumnType());
+            }
+        }
+        List<String> columns = kuduManager.getTableMatedata(finalTableName);
+        // 比较找出新增的字段
+        List<String> listCompares = KuduAgentUtils.listCompare(newColumns, columns);
+
+        if (listCompares == null || listCompares.size() == 0) {
+            return kuduManager.getTable(finalTableName);
+        }
+
+        AlterTableOptions alterTableOptions = new AlterTableOptions();
+        for (String columnName : listCompares) {
+            alterTableOptions.addColumn(KuduAgentUtils.newColumn(columnName, newColumnMap.get(columnName), false));
+        }
+        try {
+            kuduManager.getClient().alterTable(finalTableName, alterTableOptions);
+            // 修改表先移除缓存中的KuduTable
+            kuduManager.removeTable(finalTableName);
+            return kuduManager.getTable(finalTableName);
+        } catch (KuduException e) {
+            log.error("Kudu client alter table \"" + finalTableName + "\" fail. ");
+            throw new CustomerException(ExceptionEnum.OPERATION_ERROR, e);
+        }
     }
 
     public void update(T obj) {
@@ -460,6 +498,8 @@ public abstract class GenericKuduDAO<T> {
         // 如果表不存在，需创建
         if (kuduTable == null) {
             kuduTable = create(dbObject);
+        } else {
+            kuduTable = alter(dbObject);
         }
         return kuduTable;
     }

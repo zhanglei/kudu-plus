@@ -5,6 +5,8 @@ import me.bigdata.kudu.ext.configuration.ConfigsHelper;
 import me.bigdata.kudu.ext.configuration.DBGroup;
 import me.bigdata.kudu.ext.configuration.DBGroupConfig;
 import org.apache.commons.lang3.Validate;
+import org.apache.kudu.ColumnSchema;
+import org.apache.kudu.Schema;
 import org.apache.kudu.client.*;
 import org.apache.kudu.shaded.com.google.common.collect.Lists;
 import org.apache.kudu.shaded.com.google.common.collect.Maps;
@@ -12,7 +14,6 @@ import org.apache.kudu.shaded.com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
@@ -23,6 +24,7 @@ public class KuduManager {
     private static ConcurrentMap<String, KuduClient> kuduClientMap = Maps.newConcurrentMap();
     private static ConcurrentMap<String, Map<String, List<String>>> tableMap = Maps.newConcurrentMap();
     private static ConcurrentMap<String, KuduTable> kuduTableMap = Maps.newConcurrentMap();
+    private static ConcurrentMap<String, List<String>> tableMatedataMap = Maps.newConcurrentMap();
     private static KuduClient kuduClient;
 
     private static String catalog;
@@ -112,13 +114,49 @@ public class KuduManager {
     public KuduTable getTable(String tableName) {
         KuduTable table = kuduTableMap.get(tableName);
         try {
-            table = kuduClient.openTable(tableName);
-            kuduTableMap.put(tableName, table);
+            // 先判断表是否存在
+            if (table == null) {
+                if (kuduClient.tableExists(tableName)) {
+                    table = kuduClient.openTable(tableName);
+                    kuduTableMap.put(tableName, table);
+                } else {
+                    return null;
+                }
+            }
         } catch (KuduException e) {
             log.info("Kudu client open table \"" + tableName + "\" is not exists. ");
             return null;
         }
         return table;
+    }
+
+    public void removeTable(String finalTableName) {
+        kuduTableMap.remove(finalTableName);
+    }
+
+    /**
+     * 得到表列信息
+     *
+     * @param tableName
+     * @return
+     */
+    public List<String> getTableMatedata(String tableName) {
+        List<String> tableMatedata = tableMatedataMap.get(tableName);
+        try {
+            if (tableMatedata == null && kuduClient.tableExists(tableName)) {
+                tableMatedata = Lists.newArrayList();
+                KuduTable kuduTable = kuduClient.openTable(tableName);
+                Schema schema = kuduTable.getSchema();
+                List<ColumnSchema> columnSchemas = schema.getColumns();
+                for (ColumnSchema columnSchema : columnSchemas) {
+                    tableMatedata.add(columnSchema.getName());
+                }
+                tableMatedataMap.put(tableName, tableMatedata);
+            }
+        } catch (KuduException e) {
+            log.info("Kudu client open table \"" + tableName + "\" is not exists. ");
+        }
+        return tableMatedata;
     }
 
     /**
@@ -194,5 +232,10 @@ public class KuduManager {
             }
         }
         return new ArrayList<>();
+    }
+
+    public static void main(String[] args) {
+        KuduManager.getInstance().getTable("presto::a006.tel_test_demo");
+        KuduManager.getInstance().getTableMatedata("presto::a006.tel_test_demo");
     }
 }

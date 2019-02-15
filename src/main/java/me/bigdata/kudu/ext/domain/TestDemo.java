@@ -12,6 +12,8 @@ public class TestDemo extends KuduBaseDomain {
     private String userName;
     private Integer age;
     private Integer sex;
+    private String email;
+    private String qq;
 
     @Override
     public String getTableName() {
@@ -53,5 +55,21 @@ public class TestDemo extends KuduBaseDomain {
 
     public void setSex(Integer sex) {
         this.sex = sex;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getQq() {
+        return qq;
+    }
+
+    public void setQq(String qq) {
+        this.qq = qq;
     }
 }

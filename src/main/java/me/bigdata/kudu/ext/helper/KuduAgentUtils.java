@@ -4,9 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kudu.ColumnSchema;
 import org.apache.kudu.Type;
 import org.apache.kudu.client.*;
+import org.apache.kudu.shaded.com.google.common.collect.Lists;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -341,5 +343,18 @@ public class KuduAgentUtils {
                 throw new CustomerException(ExceptionEnum.OPERATION_ERROR, e);
             }
         }
+    }
+
+    /**
+     * 差集，获取新增字段
+     *
+     * @param newColumnList
+     * @param oldColumnList
+     * @return
+     */
+    public static List<String> listCompare(List<String> newColumnList, List<String> oldColumnList) {
+        List<String> newColumnListClone = Lists.newArrayList(newColumnList);
+        newColumnListClone.removeAll(oldColumnList);
+        return newColumnListClone;
     }
 }
