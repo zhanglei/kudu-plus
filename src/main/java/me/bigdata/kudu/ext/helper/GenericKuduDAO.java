@@ -60,7 +60,7 @@ public abstract class GenericKuduDAO<T> {
         Schema schema = new Schema(columns);
 
         CreateTableOptions options = new CreateTableOptions();
-        options.addHashPartitions(partitionColumns, 3);
+        options.addHashPartitions(partitionColumns, 2);
 
         try {
             kuduManager.getClient().createTable(finalTableName, schema, options);

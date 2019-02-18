@@ -27,7 +27,7 @@ public class DAOTest {
         for (int i = 0; i < 10; i++) {
             Random random = new Random();
             TestDemo testDomain = new TestDemo();
-            testDomain.setTableName("testhaha");
+            testDomain.setTableName("testhei");
             testDomain.setId(String.valueOf(random.nextInt(1000) + 1));
             testDomain.setAge(random.nextInt(88) + 1);
             testDomain.setUserName("roger.xie" + i);
