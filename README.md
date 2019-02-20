@@ -4,7 +4,6 @@
 kudu-plus 主要是工作中使用kudu，对kudu client熟悉来实现的一些操作。
 
 #### 功能实现
-
 - 查看kudu集群所有表
 - 创建kudu表
 - 删除kudu表
